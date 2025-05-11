@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
 
-// POST /api/auth/login
+// Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -15,16 +16,25 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: 'Felaktig e-post eller lösenord' });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user._id, email: user.email } });
+    const token = jwt.sign(
+      { user: { id: user._id } },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token });
   } catch (err) {
-    res.status(500).json({ msg: 'Serverfel' });
+    console.error(err.message);
+    res.status(500).send('Serverfel');
   }
 });
 
-module.exports = router;
-const auth = require('../middleware/auth');
-
-router.get('/dashboard', auth, (req, res) => {
-  res.json({ msg: 'Välkommen till din dashboard!' });
+// ✅ Tokenverifiering
+router.get('/verify', authMiddleware, (req, res) => {
+  res.json({
+    msg: 'Token giltig',
+    user: req.user
+  });
 });
+
+module.exports = router;
