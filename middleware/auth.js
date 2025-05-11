@@ -10,5 +10,12 @@ module.exports = function (req, res, next) {
     next();
   } catch (err) {
     res.status(400).json({ msg: 'Ogiltig token' });
+    const authMiddleware = require('../middleware/auth');
+
+router.get('/debug', authMiddleware, (req, res) => {
+  res.json({
+    msg: 'Token giltig',
+    user: req.user
+
   }
 };
